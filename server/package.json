@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "server.js",
-  "type":"module",
+  "type": "module",
   "scripts": {
     "server": "nodemon server.js",
-    "start": "node server.js"
+    "start": "node api/server.js"
   },
   "keywords": [],
   "author": "",
@@ -22,5 +22,8 @@
     "nodemon": "^3.1.9",
     "stripe": "^17.7.0",
     "svix": "^1.42.0"
+  },
+  "devDependencies": {
+    "@vercel/node": "^5.1.14"
   }
 }
