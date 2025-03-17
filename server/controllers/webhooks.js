@@ -5,6 +5,7 @@ import User from "../models/User.js";
 export const clerkWebhooks = async (req, res) => {
     try {
         const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
+        console.log(whook)
 
         // ✅ Sửa lỗi verify() - Truyền đúng dữ liệu gốc thay vì JSON.stringify()
         const payload = req.body;
