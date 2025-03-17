@@ -1,13 +1,26 @@
-import mongoose from 'mongoose'
-import dotenv from 'dotenv'
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
 
+dotenv.config();
 
-dotenv.config()
-// conect
+// Kết nối MongoDB
 const connectDB = async () => {
-    mongoose.connection.on('connected', () => console.log('database is connected'))
+    try {
+        await mongoose.connect(`${process.env.MONGODB_URL}/lms`);
+        console.log('Database connected successfully');
 
-    await mongoose.connect(`${process.env.MONGODB_URL}/lms`)
-}
+        // Kiểm tra nếu model đã tồn tại trước khi tạo mới
+        const UserSchema = new mongoose.Schema({
+            name: String,
+            email: String,
+        });
 
-export default connectDB
+        mongoose.models.User = mongoose.models.User || mongoose.model('User', UserSchema);
+
+    } catch (error) {
+        console.error('Database connection failed:', error);
+        process.exit(1);
+    }
+};
+
+export default connectDB;
