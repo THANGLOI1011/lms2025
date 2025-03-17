@@ -15,5 +15,5 @@ app.use(express.json())
 
 // Routes
 app.get('/', (req, res) => res.send('API Working'))
-app.post("/api/clerk-webhook", express.raw({ type: "application/json" }), clerkWebhooks);
+app.post("/clerk", express.raw({ type: "application/json" }), clerkWebhooks);
 export default app
