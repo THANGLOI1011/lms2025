@@ -10,10 +10,12 @@ const app = express()
 await connectDB()
 
 // Middleware
-app.use(cors())
-app.use(express.json())
+app.use(express.json()); // Đảm bảo middleware JSON trước khi xử lý webhook
 
-// Routes
-app.get('/', (req, res) => res.send('API Working'))
-app.post("/clerk", express.raw({ type: "application/json" }), clerkWebhooks);
+app.post("/clerk", (req, res, next) => {
+    console.log("Webhook Headers:", req.headers);
+    console.log("Webhook Body:", req.body);
+    next();
+}, clerkWebhooks);
+
 export default app
