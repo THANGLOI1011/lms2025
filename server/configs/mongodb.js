@@ -3,7 +3,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Kết nối MongoDB
 const connectDB = async () => {
     try {
         await mongoose.connect(`${process.env.MONGODB_URL}/lms`);
@@ -15,11 +14,19 @@ const connectDB = async () => {
             email: String,
         });
 
-        mongoose.models.User = mongoose.models.User || mongoose.model('User', UserSchema);
+        const User = mongoose.models.User || mongoose.model('User', UserSchema);
+
+        // Thêm user mẫu để tạo database
+        const existingUser = await User.findOne({ email: 'admin@example.com' });
+        if (!existingUser) {
+            await User.create({ name: 'Admin', email: 'admin@example.com' });
+            console.log('User created, check your database!');
+        } else {
+            console.log('User already exists.');
+        }
 
     } catch (error) {
         console.error('Database connection failed:', error);
-        process.exit(1);
     }
 };
 
