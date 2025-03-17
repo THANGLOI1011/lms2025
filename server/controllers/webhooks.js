@@ -31,7 +31,7 @@ export const clerkWebhooks = async (req, res) => {
                 return res.json({ success: true, message: "User created successfully" });
             }
 
-            case "user.updated": { // ✅ Sửa lỗi 'user.update' → 'user.updated'
+            case "user.updated": { // ✅ Sửa lỗi 'user.update' → 'user.updated'd
                 const userData = {
                     email: data.email_addresses[0].email_address, // ✅ Sửa lỗi key email
                     name: `${data.first_name} ${data.last_name}`,
