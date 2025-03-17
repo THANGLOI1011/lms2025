@@ -16,6 +16,4 @@ app.use(express.json())
 // Routes
 app.get('/', (req, res) => res.send('API Working'))
 app.post('/clerk', clerkWebhooks)
-
-// ✅ Xuất API thay vì `app.listen()`
 export default app
