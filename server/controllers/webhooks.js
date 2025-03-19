@@ -1,15 +1,24 @@
 import { Webhook } from "svix";
 import User from "../models/User.js";
-import dotenv from 'dotenv'
-export const clerkWebhooks = async (req, res) => {
-    try {
-        console.log("🔹 Received Webhook Headers:", req.headers);
-        console.log("🔹 Received Webhook Body:", req.body);
-        console.log("🔹 Webhook Received!");
-        console.log("🔹 Headers:", req.headers);
-        console.log("🔹 Body:", req.body);
+import dotenv from "dotenv";
+import connectDB from "../configs/mongodb.js"; // Nếu dùng MongoDB
 
-        const whook = new Webhook('whsec_3awXfvh402/xIA/gdGJp7K+a1KGcAJ0D');
+dotenv.config();
+
+export const clerkWebhooks = async (req, res) => {
+    if (req.method !== "POST") {
+        return res.status(405).json({ success: false, message: "Method Not Allowed" });
+    }
+
+    console.log("🔹 Webhook Received!");
+    console.log("🔹 Headers:", req.headers);
+    console.log("🔹 Body:", req.body);
+
+    try {
+        await connectDB(); // Kết nối MongoDB nếu cần
+
+        // Lấy webhook secret từ biến môi trường
+        const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
         console.log("🔹 Clerk Webhook Secret:", process.env.CLERK_WEBHOOK_SECRET);
 
         const payloadString = JSON.stringify(req.body);
@@ -26,19 +35,20 @@ export const clerkWebhooks = async (req, res) => {
 
         switch (type) {
             case "user.created":
-    console.log("📌 Creating User:", data);
-    try {
-        await User.create({
-            _id: data.id,
-            email: data.email_addresses && data.email_addresses[0]?.email_address ? data.email_addresses[0].email_address : "No Email",
-            name: `${data.first_name || ""} ${data.last_name || ""}`,
-            imageUrl: data.image_url
-        });
-        return res.json({ success: true, message: "User created successfully" });
-    } catch (dbError) {
-        console.error("❌ Error creating user in MongoDB:", dbError);
-        return res.status(500).json({ success: false, message: "Failed to create user in database" });
-    }
+                console.log("📌 Creating User:", data);
+                try {
+                    await User.create({
+                        _id: data.id,
+                        email: data.email_addresses[0]?.email_address || "No Email",
+                        name: `${data.first_name || ""} ${data.last_name || ""}`,
+                        imageUrl: data.image_url
+                    });
+                    return res.json({ success: true, message: "User created successfully" });
+                } catch (dbError) {
+                    console.error("❌ Error creating user in MongoDB:", dbError);
+                    return res.status(500).json({ success: false, message: "Failed to create user in database" });
+                }
+
             case "user.updated":
                 console.log("📌 Updating User:", data);
                 await User.findByIdAndUpdate(data.id, {
@@ -61,4 +71,10 @@ export const clerkWebhooks = async (req, res) => {
         console.error("❌ Webhook Error:", error.message);
         return res.status(500).json({ success: false, message: error.message });
     }
+}
+
+export const config = {
+    api: {
+        bodyParser: false, // Hỗ trợ raw body cho webhook
+    },
 };
