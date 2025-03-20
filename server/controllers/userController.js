@@ -7,11 +7,11 @@ export const getUserData = async (req,res) => {
         const userId = req.auth.userId;
         console.log("userId:", userId); // In userId
 
-        if (!mongoose.Types.ObjectId.isValid(userId)) { // Check if userId is a valid ObjectId
+        if (!userId) { // Check if userId is a valid ObjectId
             return res.json({success:false,message:'Invalid user ID'});
         }
 
-        const user = await User.findById(userId);
+        const user = await User.findOne({ _id: userId });
         console.log("user:", user); // In user
 
         if(!user){
