@@ -16,6 +16,10 @@ const chapterSchema = new mongoose.Schema({
     chapterContent:[lectureSchema]
 },{_id:false})
 const courseSchema = new mongoose.Schema({
+    _id: {
+        type: mongoose.Schema.Types.ObjectId, // Đảm bảo _id là ObjectId
+        default: () => new mongoose.Types.ObjectId(), // Tạo ObjectId mặc định
+    },
     courseTitle: { type:String,required:true },
     courseDescription:{ type:String,required:true },
     courseThumbnail:{type:String},
