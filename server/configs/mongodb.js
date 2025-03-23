@@ -5,16 +5,19 @@ dotenv.config();
 
 const connectDB = async () => {
     try {
-        const dbURI = `${process.env.MONGODB_URL}/lms`;
-        console.log(`Connecting to MongoDB at: ${dbURI}`);
+        const dbURI = process.env.MONGODB_URL;
+        if (!dbURI) {
+            throw new Error("⚠️ MONGODB_URL is not defined in environment variables.");
+        }
 
         await mongoose.connect(dbURI, {
-            dbName: "lms"
+            dbName: "lms",
         });
 
-        console.log('Database connected successfully');
+        console.log('✅ Database connected successfully');
     } catch (error) {
-        console.error('Database connection failed:', error);
+        console.error('❌ Database connection failed:', error);
+        process.exit(1); // Dừng server nếu kết nối thất bại
     }
 };
 
