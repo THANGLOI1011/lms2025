@@ -42,25 +42,34 @@ export const clerkWebhooks = async (req, res) => {
         switch (type) {
             case "user.created":
                 console.log("📌 Creating User:", JSON.stringify(data, null, 2));
+            
                 try {
+                    const existingUser = await User.findOne({ clerkId: data.id });
+            
+                    if (existingUser) {
+                        console.log("⚠️ User already exists:", existingUser);
+                        return res.json({ success: true, message: "User already exists" });
+                    }
+            
                     const userData = {
-                        _id: data.id,
-                        clerkId: data.id, // FIXED: Typo
+                        _id: data.id,  // ✅ Đảm bảo _id trùng với Clerk ID
+                        clerkId: data.id,
                         email: data.email_addresses[0]?.email_address || "No Email",
                         name: `${data.first_name || ""} ${data.last_name || ""}`.trim(),
                         imageUrl: data.image_url
                     };
-
+            
                     console.log("🛠️ Data to be inserted:", userData);
-
+            
                     const newUser = await User.create(userData);
                     console.log("✅ User created successfully:", newUser);
-
+            
                     return res.json({ success: true, message: "User created successfully" });
                 } catch (dbError) {
                     console.error("❌ Error creating user in MongoDB:", dbError);
                     return res.status(500).json({ success: false, message: dbError.message });
                 }
+            
 
             case "user.updated":
                 console.log("📌 Updating User:", JSON.stringify(data, null, 2));

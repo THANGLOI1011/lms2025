@@ -6,6 +6,11 @@ const UserSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: false, unique: true, sparse: true }, // Allow optional email but enforce uniqueness
     imageUrl: { type: String, required: false }, // Optional profile image
+    role: { 
+        type: String, 
+        enum: ["student", "educator", "admin"], 
+        default: "student"  // ✅ Fix: Mặc định user mới là "student"
+    },
     enrolledCourses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course', default: [] }] // Default empty array
 }, { timestamps: true });
 

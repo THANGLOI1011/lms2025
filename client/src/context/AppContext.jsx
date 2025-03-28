@@ -57,23 +57,34 @@ export const AppContextProvider = (props) => {
 
     // Fetch user enrolled courses
     const fetchUserEnrolledCourses = async () => {
-        if (!user) return;
-
+        if (!user) {
+            console.warn("⚠️ No user found, skipping API call.");
+            return;
+        }
+    
         try {
             const token = await getToken();
             const { data } = await axios.get(`${backendUrl}/api/user/enrolled-courses`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-
-            if (data.success) {
-                setEnrolledCourses(data.enrolledCourses.reverse());
+    
+            console.log("📌 API response:", data); // Kiểm tra dữ liệu API trả về
+    
+            if (data.success && Array.isArray(data.enrolledCourses)) {
+                console.log("✅ Enrolled courses:", data.enrolledCourses);
+                setEnrolledCourses([...data.enrolledCourses].reverse());
             } else {
-                toast.error(data.message);
+                console.error("❌ API response is not in expected format", data);
+                toast.error(data.message || "Failed to load enrolled courses.");
+                setEnrolledCourses([]); // Đảm bảo enrolledCourses không undefined
             }
         } catch (error) {
+            console.error("❌ Error fetching enrolled courses:", error);
             toast.error(error.message);
+            setEnrolledCourses([]); // Đảm bảo không bị lỗi khi hiển thị
         }
     };
+    
 
     // Function to calculate rating
     const caculateRating = (course) => {
@@ -97,7 +108,7 @@ export const AppContextProvider = (props) => {
     };
 
     // Function to calculate number of lectures
-    const calculateNoOfLecture = (course) => {
+    const calculateNoOfLectures = (course) => {
         return course.courseContent.reduce((total, chapter) => {
             return total + (Array.isArray(chapter.chapterContent) ? chapter.chapterContent.length : 0);
         }, 0);
@@ -115,11 +126,11 @@ export const AppContextProvider = (props) => {
             fetchUserEnrolledCourses();
         }
     }, [user]);
-
+    
     // Context value
     const value = {
         currency, allCourses, navigate, caculateRating, isEducator, setIsEducator,
-        calculateChapterTime, calculateCourseDuration, calculateNoOfLecture,
+        calculateChapterTime, calculateCourseDuration, calculateNoOfLectures,
         enrolledCourses, fetchUserEnrolledCourses, backendUrl, userData, setUserData, getToken, fetchAllCourses
     };
 

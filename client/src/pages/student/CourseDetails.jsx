@@ -16,7 +16,7 @@ const CourseDetails = () => {
   const [isAlreadyEnrolled, setIsAlreadyEnrolled] = useState(false);
   const [playerData, setPlayerData] = useState(null);
   const { allCourses,caculateRating,calculateChapterTime,calculateCourseDuration,
-    calculateNoOfLecture,currency,backendUrl,userData,getToken } = useContext(AppContext);
+    calculateNoOfLectures,currency,backendUrl,userData,getToken } = useContext(AppContext);
 
   // useEffect(() => {
   //   if (allCourses && allCourses.length > 0) {
@@ -176,7 +176,7 @@ const CourseDetails = () => {
               
               <div className='flex items-center gap-1'>
                 <img src={assets.lesson_icon} alt="clock icon" />
-                <p>{calculateNoOfLecture(courseData)} lessons</p>
+                <p>{calculateNoOfLectures(courseData)} lessons</p>
               </div>
           </div>
           <div>

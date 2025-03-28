@@ -8,16 +8,24 @@ export const updateRoleToEducator = async (req, res) => {
     try {
         console.log("Auth Data:", req.auth);
         const userId = req.auth.userId;
-        
-        await clerkClient.users.updateUserMetadata(userId, {
-            publicMetadata: { role: 'educator' }, // Sửa 'publicMedata' thành 'publicMetadata'
-        });
+
+        // Lấy dữ liệu user từ Clerk để kiểm tra role hiện tại
+        const user = await clerkClient.users.getUser(userId);
+        const currentRole = user.publicMetadata?.role || "student"; // Nếu không có thì mặc định là "student"
+
+        // Kiểm tra nếu đã là educator thì không cần update
+        if (currentRole === "educator") {
+            return res.json({ success: true, message: "User is already an educator" });
+        }
+
+       
 
         res.json({ success: true, message: "You can publish a course now" });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
 
 // Thêm khóa học mới
 export const addCourse = async (req, res) => {
@@ -97,22 +105,40 @@ export const educatorDashboardData = async () => {
 }
 
 // get enrolled students data with purchase data
-export const getEnrolledStudentsData = async (req,res) => {
-    try{
-        const educator = req.auth.userId
-        const courses = await Course.find({educator})
-        const courseId = courses.map(course => course._id)
+export const getEnrolledStudentsData = async (req, res) => {
+    try {
+        const educator = req.auth.userId;
+        const courses = await Course.find({ educator });
+
+        console.log("Courses found:", courses); // 🛠 Kiểm tra danh sách khóa học
+
+        const courseId = courses.map(course => course._id);
+        console.log("Course IDs:", courseId); // 🛠 Kiểm tra courseId có dữ liệu không
+
+        if (courseId.length === 0) {
+            return res.json({ success: false, message: "No courses found for this educator" });
+        }
+
         const purchases = await Purchase.find({
-            courseId:{$in:courses},
-            status:'completed'
-        }).populate('userId','name imageUrl').populate('courseId','courseTitle')
+            courseId: { $in: courseId },
+        }).populate('userId', 'name imageUrl').populate('courseId', 'courseTitle');
+
+        console.log("Purchases found:", purchases); // 🛠 Kiểm tra danh sách purchases
+
+        if (purchases.length === 0) {
+            return res.json({ success: false, message: "No enrolled students found" });
+        }
+
         const enrolledStudents = purchases.map(purchase => ({
-            student:purchase.userId,
-            courseTitle:purchase.courseId.courseTitle,
+            student: purchase.userId,
+            courseTitle: purchase.courseId.courseTitle,
+            status: purchase.status,
             purchaseDate: purchase.createdAt
-        }))
-        res.json({success:true,enrolledStudents})
-    }catch(error){
-        res.json({success:false,message:error.message})
+        }));
+
+        res.json({ success: true, enrolledStudents });
+
+    } catch (error) {
+        res.json({ success: false, message: error.message });
     }
-}
+};

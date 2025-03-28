@@ -7,27 +7,31 @@ import dotenv from 'dotenv'
 import { CourseProgress } from "../models/CourseProgress.js";
 
 // get user data
-export const getUserData = async (req,res) => {
-    try{
-        const userId = req.auth.userId;
-        console.log("userId:", userId); // In userId
+export const getUserData = async (req, res) => {
+    try {
+        const userId = req.auth.userId; 
+        console.log("User ID from Clerk:", userId);
 
-        if (!userId) { // Check if userId is a valid ObjectId
-            return res.json({success:false,message:'Invalid user ID'});
+        if (!userId) {
+            return res.status(400).json({ success: false, message: "Invalid user ID" });
         }
 
-        const user = await User.findOne({ _id: userId });
-        console.log("user:", user); // In user
+        // Tìm user theo clerkId thay vì _id
+        const user = await User.findOne({ clerkId: userId });
+        console.log("User found:", user);
 
-        if(!user){
-            return res.json({success:false,message:'User not found'});
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
         }
-        res.json({success:true,user});
-    }catch(error){
-        console.error("Error:", error); // In error
-        res.json({success:false,message:error.message });
+
+        res.json({ success: true, user });
+    } catch (error) {
+        console.error("Error:", error);
+        res.status(500).json({ success: false, message: error.message });
     }
-}
+};
+
+
 
 // user enrolled course with lecture links
 export const userEnrolledCourses = async (req, res) => {
@@ -112,11 +116,22 @@ export const purchaseCourse = async (req, res) => {
             },
         });
 
+        // **Cập nhật danh sách khóa học đã đăng ký của user**
+        await User.findByIdAndUpdate(userId, { 
+            $push: { enrolledCourses: courseData._id } 
+        });
+
+        // **Cập nhật danh sách học viên của khóa học**
+        await Course.findByIdAndUpdate(courseData._id, { 
+            $push: { enrolledStudents: userId } 
+        });
+
         res.json({ success: true, session_url: session.url });
     } catch (error) {
         res.json({ success: false, message: error.message });
     }
 };
+
 
 
 // update user course progress
@@ -161,34 +176,38 @@ export const getUserCourseProgress = async(req,res) => {
 
 // add user ratings to course
 
-export const addUserRating = async (req,res) => {
+export const addUserRating = async (req, res) => {
     const userId = req.auth.userId;
-    const { courseId,rating } = req.body;
+    const { courseId, rating } = req.body;
 
-    if(!courseId || !userId || !rating < 1 || rating > 5){
-        return res.json({success:false,message:'Invalid Details'})
+    if (!courseId || !userId || typeof rating !== "number" || rating < 1 || rating > 5) {
+        return res.json({ success: false, message: "Invalid Details" });
     }
-    try{
-        const course = await Course.findById(courseId)
 
-        if(!course){
-            return res.json({success:false,message:'Course Not Found'})
+    try {
+        const course = await Course.findById(courseId);
+        if (!course) {
+            return res.json({ success: false, message: "Course Not Found" });
         }
 
-        const user = await User.findById(userId)
-        if(!user || user.enrolledCourses.includes(courseId)){
-            return res.json({success:false,message:'User Not Found or Not Enrolled in Course'})
+        const user = await User.findById(userId);
+        if (!user || !user.enrolledCourses.includes(courseId)) {
+            return res.json({ success: false, message: "User Not Found or Not Enrolled in Course" });
         }
-        const existingRatingIndex = course.courseRatings.findIndex(r => r.userId === userId)
-        if(existingRatingIndex > -1){
-            course.courseRatings[existingRatingIndex].rating = rating
-        }else{
-            course.courseRatings.push({userId,rating})
+
+        // Kiểm tra xem user đã rating trước đó chưa
+        const existingRatingIndex = course.courseRatings.findIndex(r => r.userId.toString() === userId);
+        if (existingRatingIndex > -1) {
+            course.courseRatings[existingRatingIndex].rating = rating;
+        } else {
+            course.courseRatings.push({ userId, rating });
         }
+
         await course.save();
-        return res.json({success:true,message:'Rating added'})
-    }catch(error){
-        return res.json({success:false,message:error.message})
-    }   
-}
+        return res.json({ success: true, message: "Rating added" });
+    } catch (error) {
+        return res.json({ success: false, message: error.message });
+    }
+};
+
 
