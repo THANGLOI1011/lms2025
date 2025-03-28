@@ -15,8 +15,6 @@ const StudentsEnrolled = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
   
-      console.log("API Response:", data); // 👈 Kiểm tra dữ liệu trả về
-  
       if (data.success) {
         setEnrolledStudents(data.enrolledStudents.reverse());
       } else {
@@ -51,7 +49,7 @@ const StudentsEnrolled = () => {
           </thead>
           <tbody className='text-sm text-gray-500'>
           {enrolledStudents.map((item, index) => {
-  console.log("Rendering student:", item); // 🐛 Debug xem item có dữ liệu không
+  console.log("Rendering student:", item);
   return (
     <tr key={index} className='border-b border-gray-500/20'>
       <td className='px-4 py-3 text-center hidden sm:table-cell'>{index + 1}</td>
