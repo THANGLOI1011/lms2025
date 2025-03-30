@@ -58,6 +58,10 @@ export const purchaseCourse = async (req, res) => {
         const { courseId } = req.body;
         const { origin } = req.headers;
         const userId = req.auth.userId;
+        const user = await User.findById(userId);
+        if (user.enrolledCourses.includes(courseId)) {
+            return res.json({ success: false, message: 'You have already purchased this course.' });
+        }
 
         // Chuyển đổi courseId thành ObjectId
         const objectCourseId = new mongoose.Types.ObjectId(courseId);
