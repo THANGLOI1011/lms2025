@@ -46,7 +46,8 @@ export const AppContextProvider = (props) => {
 
             if (data.success) {
                 setUserData(data.user);
-                setIsEducator(user.publicMetadata?.role === 'educator'); // Xác định vai trò user
+                const role = data.user.role || user.publicMetadata?.role;
+            setIsEducator(role === 'educator'); // Cập nhật vai trò
             } else {
                 toast.error(data.message);
             }
@@ -71,7 +72,6 @@ export const AppContextProvider = (props) => {
             console.log("📌 API response:", data); // Kiểm tra dữ liệu API trả về
     
             if (data.success && Array.isArray(data.enrolledCourses)) {
-                console.log("✅ Enrolled courses:", data.enrolledCourses);
                 setEnrolledCourses([...data.enrolledCourses].reverse());
             } else {
                 console.error("❌ API response is not in expected format", data);

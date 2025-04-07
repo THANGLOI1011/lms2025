@@ -152,7 +152,7 @@ export const stripeWebhooks = async (req, res) => {
                 userData.enrolledStudents.push(courseData._id);
                 await userData.save();
 
-                purchaseData.status = 'complete';
+                purchaseData.status = 'completed';
                 await purchaseData.save();
 
                 console.log("✅ Payment success, enrollment updated");

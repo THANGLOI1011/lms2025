@@ -22,6 +22,7 @@ const Player = () => {
   const [videoDuration, setVideoDuration] = useState(0);
   const [isEligibleToComplete, setIsEligibleToComplete] = useState(false);
 
+  //lấy thông tin khóa học 
   useEffect(() => {
     if (enrolledCourses.length > 0 && userData) {
       const foundCourse = enrolledCourses.find(course => String(course._id) === String(courseId));
@@ -36,17 +37,12 @@ const Player = () => {
   useEffect(() => {
     if (courseId) getCourseProgress();
   }, [courseId]);
+
+  //đáng giá khóa học
   const handleRate = async (rating) => {
-    console.log("Rating course:", courseId, "with", rating);
     try{
       const token = await getToken()
-      console.log("Sending rating request:", {
-        courseId,
-        rating,
-        token
-    });
       const { data } = await axios.post(backendUrl + '/api/user/add-rating',{courseId,rating,userId: userData._id},{headers:{Authorization: `Bearer ${token}`}})
-      console.log("Response from server:", data);
       if(data.success){
         toast.success(data.message)
         fetchUserEnrolledCourses()
@@ -54,7 +50,6 @@ const Player = () => {
         toast.error(data.message)
       }
     }catch(error){
-      console.error("Error rating course:", error);
       toast.error(error.message)
     }
   }
@@ -71,7 +66,7 @@ const Player = () => {
       toast.error(error.message);
     }
   };
-
+  //đánh dấu bài học đã hoàn thành
   const markLectureAsCompleted = async (lectureId) => {
     if (!isEligibleToComplete) return;
 
@@ -93,7 +88,7 @@ const Player = () => {
       toast.error(error.message);
     }
   };
-
+  //thay dõi tgian xem video 
   const handlePlayerStateChange = (event) => {
     if (event.data === 1) { // Video đang phát
       const interval = setInterval(() => {
@@ -155,40 +150,49 @@ useEffect(() => {
                   <p className='text-sm md:text-default'>{chapter.chapterContent.length} lectures - {calculateChapterTime(chapter)}</p>
                 </div>
                 <div className={`overflow-hidden transition-all duration-300 ${openSections[index] ? 'max-h-96' : 'max-h-0'}`}>
-                  <ul className='list-disc md:pl-10 pl-4 pr-4 py-2 text-gray-600 border-t border-gray-300'>
-                    {chapter.chapterContent.map((lecture, i) => (
-                      <li key={i} className='flex items-start gap-2 py-1'>
-                        <img src={progressData?.lectureCompleted?.includes(lecture.lectureId) ? assets.blue_tick_icon : assets.play_icon} alt="playicon" className='w-4 h-4 mt-1' />
-                        <div className='flex items-center justify-between w-full text-gray-800 text-xs md:text-[15px]'>
-                          <p>{lecture.lectureTitle}</p>
-                          <div className='flex gap-2'>
-                            {lecture.lectureUrl && (
-                              <p 
+                              <ul className='list-disc md:pl-10 pl-4 pr-4 py-2 text-gray-600 border-t border-gray-300'>
+                {chapter.chapterContent.map((lecture, i) => {
+                  // Kiểm tra xem bài học trước đó đã hoàn thành chưa
+                  const isPreviousLectureCompleted = i === 0 || progressData?.lectureCompleted?.includes(chapter.chapterContent[i - 1]?.lectureId);
+                  const isCurrentLectureCompleted = progressData?.lectureCompleted?.includes(lecture.lectureId);
+
+                  return (
+                    <li key={i} className='flex items-start gap-2 py-1'>
+                      <img src={isCurrentLectureCompleted ? assets.blue_tick_icon : assets.play_icon} alt="playicon" className='w-4 h-4 mt-1' />
+                      <div className='flex items-center justify-between w-full text-gray-800 text-xs md:text-[15px]'>
+                        <p>{lecture.lectureTitle}</p>
+                        <div className='flex gap-2'>
+                          {lecture.lectureUrl && (
+                            <p 
                               onClick={() => {
-                                const selectedLecture = { ...lecture, chapter: index + 1, lecture: i + 1 };
-                                setPlayerData(selectedLecture);
-                            
-                                // Nếu bài học đã completed, set watchTime ngay lập tức
-                                if (progressData?.lectureCompleted?.includes(lecture.lectureId)) {
-                                  setWatchTime(targetWatchTime);
-                                  setIsEligibleToComplete(true);
+                                if (isPreviousLectureCompleted) {
+                                  const selectedLecture = { ...lecture, chapter: index + 1, lecture: i + 1 };
+                                  setPlayerData(selectedLecture);
+
+                                  if (isCurrentLectureCompleted) {
+                                    setWatchTime(targetWatchTime);
+                                    setIsEligibleToComplete(true);
+                                  } else {
+                                    setWatchTime(0);
+                                    setIsEligibleToComplete(false);
+                                  }
                                 } else {
-                                  setWatchTime(0); // Reset nếu chưa hoàn thành
-                                  setIsEligibleToComplete(false);
+                                  toast.warning("Please complete the previous lecture first.");
                                 }
                               }} 
-                              className='text-blue-500 cursor-pointer'
+                              className={`cursor-pointer ${isPreviousLectureCompleted ? 'text-blue-500' : 'text-gray-400 cursor-not-allowed'}`}
                             >
-                              Watch
+                              {isPreviousLectureCompleted ? "Watch" : "Locked"}
                             </p>
-                            
-                            )}
-                            <p>{humanizeDuration(lecture.lectureDuration * 60 * 1000, { units: ['h', 'm'] })}</p>
-                          </div>
+                          )}
+                          <p>{humanizeDuration(lecture.lectureDuration * 60 * 1000, { units: ['h', 'm'] })}</p>
                         </div>
-                      </li>
-                    ))}
-                  </ul>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+
                 </div>
               </div>
             ))}
@@ -219,9 +223,6 @@ useEffect(() => {
                   ></div>
                 </div>
               )}
-
-
-
               <div className='flex justify-between items-center mt-1'>
                 <p>{playerData?.chapter}.{playerData?.lecture} {playerData?.lectureTitle}</p>
               <button 

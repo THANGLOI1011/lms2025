@@ -3,7 +3,9 @@ const courseProgressSchema = new mongoose.Schema({
     userId:{type:String,required:true},
     courseId:{type:String,required:true},
     completed:{type:Boolean,required:false},
-    lectureCompleted:[]
+    lectureCompleted:[],
+    totalChapters: { type: Number, required: true },
+    
 },{minimize:false})
 
 export const CourseProgress = mongoose.model('CourseProgress', courseProgressSchema)

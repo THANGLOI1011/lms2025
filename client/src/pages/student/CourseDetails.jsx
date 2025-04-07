@@ -38,26 +38,38 @@ const CourseDetails = () => {
   }
 
   const enrollCourse = async () => {
-    try{
-      console.log("User Data:", userData); // Debug: Kiểm tra giá trị userData
-      if(!userData){
-        return toast.warn('Login to Enroll')
+    try {
+      if (!userData) {
+        return toast.warn('Login to Enroll');
       }
-      if(isAlreadyEnrolled){
-        return toast.warn('Already Enrolled')
+  
+      if (userData.role === 'educator') {
+        return toast.error('Admin is not allowed to purchase courses.');
       }
-      const token = await getToken()
-      const {data} = await axios.post(backendUrl + '/api/user/purchase',{courseId:courseData._id},{headers:{Authorization:`Bearer ${token}`}})
-      if(data.success){
-        const {session_url} = data
-        window.location.replace(session_url)
-      }else{
-        toast.error(data.message)
+  
+      if (isAlreadyEnrolled) {
+        return toast.warn('Already Enrolled');
       }
-    }catch(error){
-      toast.error(error.message)
+  
+      const token = await getToken();
+      const { data } = await axios.post(
+        backendUrl + '/api/user/purchase',
+        { courseId: courseData._id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+  
+      if (data.success) {
+        window.location.replace(data.session_url);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
     }
-  }
+  };
+  
+
+
   useEffect(() => {
     fetchCourseData()
   },[allCourses])
@@ -69,6 +81,11 @@ const CourseDetails = () => {
   }, [userData, courseData]);
   
 
+
+  useEffect(() => {
+    console.log("User data:", userData);
+  }, [userData]);
+  
   const toggleSection = (index) => {
     setOpenSections((prev) => (
       {...prev,
@@ -180,7 +197,35 @@ const CourseDetails = () => {
               </div>
           </div>
           <div>
-            <button onClick={enrollCourse} className='md:mt-6 mt-4 w-full py-3 rounded bg-blue-600 text-white font-medium cursor-pointer'>{isAlreadyEnrolled ? 'Already Enrolled' : 'Enroll Now'}</button>
+          {userData?.role !== 'educator' && (
+            <button 
+            onClick={enrollCourse} 
+            disabled={
+              !userData || isAlreadyEnrolled || userData?.role === 'educator'
+            }
+            className={`md:mt-6 mt-4 w-full py-3 rounded font-medium
+              ${
+                !userData || isAlreadyEnrolled || userData?.role === 'educator'
+                  ? 'bg-gray-400 text-white cursor-not-allowed'
+                  : 'bg-blue-600 text-white cursor-pointer'
+              }`
+            }
+          >
+            {
+              !userData
+                ? 'Login to Enroll'
+                : isAlreadyEnrolled
+                  ? 'Already Enrolled'
+                  : userData.role === 'educator'
+                    ? 'Admins cannot enroll'
+                    : 'Enroll Now'
+            }
+          </button>
+          )}
+
+
+
+
             <div className='pt-6'>
               <p className='md:text-xl text-lg font-medium text-gray-800'>What's is in the course?</p>
               <ul className='ml-4 pt-2 text-sm md:text-[15px] list-disc text-gray-500 '>

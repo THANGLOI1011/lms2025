@@ -55,86 +55,78 @@ export const userEnrolledCourses = async (req, res) => {
 // purchase course
 export const purchaseCourse = async (req, res) => {
     try {
-        const { courseId } = req.body;
-        const { origin } = req.headers;
-        const userId = req.auth.userId;
-        const user = await User.findById(userId);
-        if (user.enrolledCourses.includes(courseId)) {
-            return res.json({ success: false, message: 'You have already purchased this course.' });
-        }
-
-        // Chuyển đổi courseId thành ObjectId
-        const objectCourseId = new mongoose.Types.ObjectId(courseId);
-
-        // Kiểm tra xem user có tồn tại không
-        const userData = await User.findById(userId);
-        if (!userData) {
-            return res.json({ success: false, message: "User not found" });
-        }
-
-        // Kiểm tra xem course có tồn tại không
-        const courseData = await Course.findById(objectCourseId);
-        if (!courseData) {
-            return res.json({ success: false, message: "Course not found" });
-        }
-
-        // Tính toán số tiền cần thanh toán
-        const amount = (courseData.coursePrice - (courseData.discount * courseData.coursePrice) / 100).toFixed(2);
-
-        // Tạo dữ liệu thanh toán
-        const purchaseData = {
-            courseId: courseData._id,
-            userId: userId,
-            amount: amount,
-        };
-
-        const newPurchase = await Purchase.create(purchaseData);
-
-        // Stripe gateway initialize
-        const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
-        const currency = process.env.CURRENCY.toLowerCase();
-
-        // Tạo line_items cho Stripe
-        const line_items = [
-            {
-                price_data: {
-                    currency,
-                    product_data: {
-                        name: courseData.courseTitle,
-                    },
-                    unit_amount: Math.floor(newPurchase.amount * 100), // Đúng công thức tiền tệ của Stripe
-                },
-                quantity: 1,
-            },
-        ];
-
-        // Tạo phiên thanh toán Stripe
-        const session = await stripeInstance.checkout.sessions.create({
-            success_url: `${origin}/loading/my-enrollments`,
-            cancel_url: `${origin}/`,
-            payment_method_types: ['card'],
-            line_items: line_items,
-            mode: 'payment',
-            metadata: {
-                purchaseId: newPurchase._id.toString(),
-            },
+      const { courseId } = req.body;
+      const { origin } = req.headers;
+      const userId = req.auth.userId;
+  
+      // 🧠 LẤY ROLE TỪ CLERK METADATA
+      const role = req.auth.sessionClaims?.metadata?.role;
+      console.log("Role from Clerk metadata:", role);
+  
+      // ⛔ CHẶN EDUCATOR
+      if (role === 'educator') {
+        return res.status(403).json({
+          success: false,
+          message: 'Educators are not allowed to purchase courses.'
         });
-
-        // **Cập nhật danh sách khóa học đã đăng ký của user**
-        await User.findByIdAndUpdate(userId, { 
-            $push: { enrolledCourses: courseData._id } 
-        });
-
-        // **Cập nhật danh sách học viên của khóa học**
-        await Course.findByIdAndUpdate(courseData._id, { 
-            $push: { enrolledStudents: userId } 
-        });
-
-        res.json({ success: true, session_url: session.url });
+      }
+  
+      // 👉 TIẾP TỤC XỬ LÝ BÌNH THƯỜNG
+      const user = await User.findOne({ clerkId: userId }); // Đừng dùng findById nếu bạn lưu clerkId
+      if (user.enrolledCourses.includes(courseId)) {
+        return res.json({ success: false, message: 'You have already purchased this course.' });
+      }
+  
+      const objectCourseId = new mongoose.Types.ObjectId(courseId);
+      const courseData = await Course.findById(objectCourseId);
+      if (!courseData) {
+        return res.json({ success: false, message: "Course not found" });
+      }
+  
+      const amount = (courseData.coursePrice - (courseData.discount * courseData.coursePrice) / 100).toFixed(2);
+  
+      const newPurchase = await Purchase.create({
+        courseId: courseData._id,
+        userId: user._id,
+        amount: amount,
+      });
+  
+      const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
+      const currency = process.env.CURRENCY.toLowerCase();
+  
+      const session = await stripeInstance.checkout.sessions.create({
+        success_url: `${origin}/loading/my-enrollments`,
+        cancel_url: `${origin}/`,
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency,
+            product_data: { name: courseData.courseTitle },
+            unit_amount: Math.floor(newPurchase.amount * 100),
+          },
+          quantity: 1,
+        }],
+        mode: 'payment',
+        metadata: { purchaseId: newPurchase._id.toString() },
+      });
+  
+      // CẬP NHẬT ENROLL
+      await User.findByIdAndUpdate(user._id, {
+        $push: { enrolledCourses: courseData._id }
+      });
+      await Course.findByIdAndUpdate(courseData._id, {
+        $push: { enrolledStudents: user._id }
+      });
+  
+      res.json({ success: true, session_url: session.url });
+  
     } catch (error) {
-        res.json({ success: false, message: error.message });
+      console.error("Purchase Error:", error);
+      res.json({ success: false, message: error.message });
     }
-};
+  };
+  
+
 
 
 
@@ -153,9 +145,17 @@ export const purchaseCourse = async (req, res) => {
             progressData.lectureCompleted.push(lectureId)
             await progressData.save()
         }else{
+            const course = await Course.findById(courseId, 'courseContent.chapterContent');
+            if (!course) {
+                return res.status(404).json({ success: false, message: 'Course not found' });
+            }
+
+            const totalChapters = course.courseContent.length; 
+
             await CourseProgress.create({
                 userId,
                 courseId,
+                totalChapters,
                 lectureCompleted:[lectureId]
             })
         }
