@@ -197,6 +197,7 @@ const CourseDetails = () => {
               </div>
           </div>
           <div>
+
           {userData?.role !== 'educator' && (
             <button 
             onClick={enrollCourse} 
@@ -216,15 +217,10 @@ const CourseDetails = () => {
                 ? 'Login to Enroll'
                 : isAlreadyEnrolled
                   ? 'Already Enrolled'
-                  : userData.role === 'educator'
-                    ? 'Admins cannot enroll'
-                    : 'Enroll Now'
+                  : 'Enroll Now'
             }
           </button>
           )}
-
-
-
 
             <div className='pt-6'>
               <p className='md:text-xl text-lg font-medium text-gray-800'>What's is in the course?</p>
