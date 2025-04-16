@@ -24,6 +24,7 @@ const AddCourse = () => {
       isPreviewFree:false,
     }
   )
+  const [courseDescription, setCourseDescription] = useState('');
   
 
   const handleChapter = (action,chapterId) => {
@@ -89,50 +90,58 @@ const AddCourse = () => {
   }
 
   const handleSubmit = async (e) => {
-    try{
-      e.preventDefault()
-      if(!image){
-        toast.error('Thumbnail not selected')
+    try {
+      e.preventDefault();
+      if (!image) {
+        toast.error('Thumbnail not selected');
+        return;
       }
       const courseData = {
         courseTitle,
-        courseDescription: quillRef.current.root.innerHTML,
-        coursePrice:Number(coursePrice),
-        discount:Number(discount),
-        courseContent:chapters,
+        courseDescription, // Sử dụng state thay vì lấy trực tiếp từ Quill
+        coursePrice: Number(coursePrice),
+        discount: Number(discount),
+        courseContent: chapters,
+      };
+  
+      const formData = new FormData();
+      formData.append('courseData', JSON.stringify(courseData));
+      formData.append('image', image);
+      const token = await getToken();
+      const { data } = await axios.post(backendUrl + '/api/educator/add-course', formData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+  
+      if (data.success) {
+        toast.success(data.message);
+        setCourseTitle('');
+        setCourePrice(0);
+        setDiscount(0);
+        setImage(null);
+        setChapters([]);
+        setCourseDescription(''); // Reset state
+        quillRef.current.root.innerHTML = ' '; // Reset Quill editor
+      } else {
+        toast.error(data.message);
       }
-
-      const formData = new FormData()
-      formData.append('courseData', JSON.stringify(courseData))
-      formData.append('image', image)
-      const token = await getToken()
-      const {data} = await axios.post(backendUrl + '/api/educator/add-course', formData,{headers:{Authorization: `Bearer ${token}`}})
-
-      if(data.success){
-        toast.success(data.message)
-        setCourseTitle('')
-        setCourePrice(0)
-        setDiscount(0)
-        setImage(null)
-        setChapters([])
-        quillRef.current.root.innerHTML=" "
-      }else{
-        toast.error(data.message)
-      }
-    }catch(error){
-      toast.error(error.message)
+    } catch (error) {
+      toast.error(error.message);
     }
-    e.preventDefault()
-  }
+  };
 
   useEffect(() => {
-    // Initiate quill only once
-    if(!quillRef.current && editorRef.current){
-      quillRef.current = new Quill(editorRef.current,{
-        theme:'snow',
-      })
+    // Initiate Quill only once
+    if (!quillRef.current && editorRef.current) {
+      quillRef.current = new Quill(editorRef.current, {
+        theme: 'snow',
+      });
+  
+      // Lắng nghe sự kiện 'text-change' để cập nhật state
+      quillRef.current.on('text-change', () => {
+        setCourseDescription(quillRef.current.root.innerHTML);
+      });
     }
-  },[])
+  }, []);
   return (
     <div className='h-screen overflow-scroll flex flex-col items-start justify-between md:p-8 md:pb-0 p-4 pb-0'>
       <form onSubmit={handleSubmit} className='flex flex-col gap-4 max-w-md w-full text-gray-500'>

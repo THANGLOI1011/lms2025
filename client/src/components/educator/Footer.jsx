@@ -22,7 +22,6 @@ const Footer = () => {
           <img src={assets.instagram_icon} alt="instagram_icon" />
         </a>
       </div>
-      <p>122g2g2</p>
       <strong className='text-2xl text-gray-500 md:hidden'>LMS</strong>
       <p className='text-xs md:text-sm text-gray-500'>All rights reserved.</p>
     </footer>

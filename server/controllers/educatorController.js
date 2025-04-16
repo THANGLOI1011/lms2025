@@ -81,10 +81,12 @@ export const educatorDashboardData = async (req, res) => {
         // caculator total
         const purchases = await Purchase.find({
             courseId: {$in:courseIds},
-            status:'completed'
+            status:'pending'
         })
 
-        const totalEarnings = purchases.reduce((sum,purchase) => sum + purchase.amount,0)
+        const totalEarnings = purchases.reduce((sum, purchase) => {
+            return sum + (purchase.amount || 0); 
+        }, 0);
 
         // collect unique
         const enrolledStudentsData =[];
@@ -253,3 +255,23 @@ export const getAllPurchases = async (req, res) => {
         res.status(500).json({ success: false, message: "Internal server error" });
     }
 };
+
+export const deleteCourse = async (req, res) => {
+    try {
+      const { courseId } = req.params;
+  
+      // Kiểm tra xem khóa học có tồn tại không
+      const course = await Course.findById(courseId);
+      if (!course) {
+        return res.status(404).json({ success: false, message: 'Course does not exist.' });
+      }
+  
+      // Xóa khóa học
+      await Course.findByIdAndDelete(courseId);
+  
+      res.json({ success: true, message: 'Course deleted successfully.' });
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  };
+

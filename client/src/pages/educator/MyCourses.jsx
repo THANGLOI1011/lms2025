@@ -17,6 +17,26 @@ const MyCourses = () => {
       toast.error(error.message)
     }
   }
+
+  const handleDelete = async (courseId) => {
+    if (window.confirm('Are you sure you want to delete this course?')) {
+      try {
+        const token = await getToken();
+        const { data } = await axios.delete(`${backendUrl}/api/educator/courses/${courseId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+  
+        if (data.success) {
+          toast.success('Course deleted successfully!');
+          setCourses(courses.filter((course) => course._id !== courseId));
+        } else {
+          toast.error(data.message || 'Unable to delete course.');
+        }
+      } catch (error) {
+        toast.error('An error occurred while deleting the course.');
+      }
+    }
+  };
   
   useEffect(() => {
     if(isEducator){
@@ -50,6 +70,12 @@ const MyCourses = () => {
                     </td>
                     <td className='px-4 py-3'>{course.enrolledStudents.length}</td>
                     <td className='px-4 py-3'>{new Date(course.createdAt).toLocaleDateString()}</td>
+                    <td className='px-4 py-3'>
+                    <button 
+                      onClick={() => handleDelete(course._id)} 
+                      className='bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600'
+                      >Delete</button>
+                    </td>
                 </tr>
               ))}
             </tbody>

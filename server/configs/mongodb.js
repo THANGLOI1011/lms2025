@@ -14,7 +14,7 @@ const connectDB = async () => {
             dbName: "lms",
         });
     } catch (error) {
-        process.exit(1); // Dừng server nếu kết nối thất bại
+        process.exit(1);
     }
 };
 

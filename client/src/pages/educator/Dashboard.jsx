@@ -55,7 +55,7 @@ const Dashboard = () => {
             <img src={assets.earning_icon} alt="earning_icon" />
             <div>
               <p className="text-2xl font-medium text-gray-600">
-                {current}{dashboardData?.totalEarnings || 0}
+                {current}{dashboardData?.totalEarnings.toFixed(2) || 0}
               </p>
               <p className="text-base text-gray-500">Total Earnings</p>
             </div>

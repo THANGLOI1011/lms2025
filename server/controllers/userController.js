@@ -63,8 +63,7 @@ export const purchaseCourse = async (req, res) => {
       // 🧠 LẤY ROLE TỪ CLERK METADATA
       const role = req.auth.sessionClaims?.metadata?.role;
       console.log("Role from Clerk metadata:", role);
-  
-      // ⛔ CHẶN EDUCATOR
+
       if (role === 'educator') {
         return res.status(403).json({
           success: false,
