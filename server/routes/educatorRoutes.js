@@ -1,5 +1,5 @@
 import express from 'express';
-import { addCourse, educatorDashboardData, getEducatorCourses, removeEnrolledStudent, updateRoleToEducator,getEnrolledStudentsData,getAllPurchases, removePurchaseAndEnrollment,deleteCourse} from '../controllers/educatorController.js';
+import { addCourse, educatorDashboardData, getEducatorCourses,updateCourse, removeEnrolledStudent, updateRoleToEducator,getEnrolledStudentsData,getAllPurchases, removePurchaseAndEnrollment,deleteCourse} from '../controllers/educatorController.js';
 import upload from '../configs/multer.js';
 import { protecEducator } from '../middlewares/authMiddleware.js';
 
@@ -18,6 +18,7 @@ educatorRouter.get('/purchase', protecEducator, getAllPurchases);
 educatorRouter.delete('/enrolled-students/:studentId/:courseId', protecEducator, removeEnrolledStudent);
 educatorRouter.delete('/purchases/:purchaseId', protecEducator, removePurchaseAndEnrollment );
 educatorRouter.delete('/courses/:courseId', protecEducator, deleteCourse);
+educatorRouter.put('/courses/:id', protecEducator, updateCourse);
 
 
 

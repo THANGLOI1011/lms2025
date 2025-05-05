@@ -21,6 +21,7 @@ const Player = () => {
   const [watchTime, setWatchTime] = useState(0);
   const [videoDuration, setVideoDuration] = useState(0);
   const [isEligibleToComplete, setIsEligibleToComplete] = useState(false);
+  
 
   useEffect(() => {
     if (enrolledCourses.length > 0 && userData) {
@@ -94,44 +95,61 @@ const Player = () => {
     }
   };
 
-  const handlePlayerStateChange = (event) => {
-    if (event.data === 1) { // Video đang phát
-      const interval = setInterval(() => {
-        setWatchTime((prev) => {
-          const newWatchTime = prev + 1;
-          if (progressData?.lectureCompleted?.includes(playerData.lectureId)) {
-            setIsEligibleToComplete(true);
-          } else if (newWatchTime >= targetWatchTime) {
-            setIsEligibleToComplete(true);
-          }
-  
-          return newWatchTime;
-        });
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  };
   
 
+  const handlePlayerStateChange = (event) => {
+    if (event.data === 1) { // Video đang phát
+      if (!isEligibleToComplete && !playerData?.interval) { // Chưa nhán "Completed" và chua dừng interval
+        const interval = setInterval(() => { // Tăng watchTime mỗi giây
+          setWatchTime((prev) => { // Cập nhật watchTime
+            const newWatchTime = prev + 1; // Tăng thêm 1 giây
+  
+            if (newWatchTime >= targetWatchTime) { // Nếu đạt đủ thời gian xem
+              setIsEligibleToComplete(true); // Đánh dấu có thể nhấn "Completed"
+              clearInterval(interval); // Dừng interval khi đạt đủ thời gian
+            }
+  
+            return newWatchTime;
+          });
+        }, 1000);
+  
+        // Lưu interval để dừng khi video dừng
+        setPlayerData((prev) => ({ ...prev, interval }));
+      }
+    } else if (event.data === 2 || event.data === 0) { // Video tạm dừng hoặc kết thúc
+      if (playerData?.interval) { // Nếu có interval đang chạy
+        clearInterval(playerData.interval); // Dừng interval
+        setPlayerData((prev) => ({ ...prev, interval: null })); // Reset interval
+      }
+    }
+  };
+
   const handlePlayerReady = (event) => {
-    const duration = event.target.getDuration();
-    setVideoDuration(duration);
+    const duration = event.target.getDuration(); // lấy tổng số thời gian của video tính bằng giây
+    console.log("Video duration:", duration);
+    setVideoDuration(duration); // lưu tổng thời gian video vào state
   };
 
   const targetWatchTime = videoDuration * 0.05; // 5% tổng thời gian video
   const progressPercentage = progressData?.lectureCompleted?.includes(playerData?.lectureId)
-  ? 100 // Nếu bài học đã hoàn thành, luôn hiển thị 100%
-  : targetWatchTime > 0 
-    ? (watchTime / targetWatchTime) * 100 
-    : 0;
-
-const clampedProgress = Math.min(progressPercentage, 100);
+    ? 100 // Nếu bài học đã hoàn thành, luôn hiển thị 100%
+    : targetWatchTime > 0
+      ? (watchTime / targetWatchTime) *  100 // thời gian xem hiện tại chia cho thời gian yêu cầu ví dụ 5% của tổng thời gian 10s thì ( 5 / 10) * 100 = 50%
+      : 0;
+  
+  const clampedProgress = Math.min(progressPercentage, 100); // Giới hạn giá trị không vượt quá 100%
+  
+  useEffect(() => {
+    if (watchTime >= targetWatchTime) { // Nếu thời gian xem đạt yêu cầu thì dánh dấu có thể nhấn "Completed"
+      setIsEligibleToComplete(true);
+    }
+  }, [watchTime]);
 
 
 
 
 useEffect(() => {
-  if (progressData?.courseCompleted) {
+  if (progressData?.courseCompleted) { // Nếu khóa học đã hoàn thành, không cần theo dõi thời gian xem nữa
     setWatchTime(targetWatchTime); // Đặt watchTime đạt mức yêu cầu ngay lập tức
     setIsEligibleToComplete(true); // Đánh dấu có thể nhấn "Completed"
   }
@@ -145,53 +163,84 @@ useEffect(() => {
         <div className='text-gray-800'>
           <h2 className='text-xl font-semibold'>Course Structure</h2>
           <div className='pt-5'>
-            {courseData.courseContent.map((chapter, index) => (
-              <div key={index} className='border border-gray-300 bg-white mb-2 rounded'>
-                <div className='flex items-center justify-between px-4 py-3 cursor-pointer select-none' onClick={() => setOpenSections(prev => ({ ...prev, [index]: !prev[index] }))}>
-                  <div className='flex items-center gap-2'>
-                    <img className={`transform transition-transform ${openSections[index] ? 'rotate-180' : ''}`} src={assets.down_arrow_icon} alt="arrow icon" />
-                    <p className='font-medium md:text-base text-sm'>{chapter.chapterTitle}</p>
+          {courseData.courseContent.map((chapter, index) => {
+  const isPreviousChapterCompleted =
+    index === 0 || courseData.courseContent[index - 1].chapterContent.every((lecture) =>
+      progressData?.lectureCompleted?.includes(lecture.lectureId)
+    );
+
+  return (
+    <div key={index} className={`border border-gray-300 bg-white mb-2 rounded ${!isPreviousChapterCompleted ? 'opacity-50 cursor-not-allowed' : ''}`}>
+      <div
+        className={`flex items-center justify-between px-4 py-3 cursor-pointer select-none ${!isPreviousChapterCompleted ? 'pointer-events-none' : ''}`}
+        onClick={() => setOpenSections((prev) => ({ ...prev, [index]: !prev[index] }))}
+      >
+        <div className='flex items-center gap-2'>
+          <img
+            className={`transform transition-transform ${openSections[index] ? 'rotate-180' : ''}`}
+            src={assets.down_arrow_icon}
+            alt="arrow icon"
+          />
+          <p className='font-medium md:text-base text-sm'>{chapter.chapterTitle}</p>
+        </div>
+        <p className='text-sm md:text-default'>{chapter.chapterContent.length} lectures - {calculateChapterTime(chapter)}</p>
+      </div>
+      <div className={`overflow-hidden transition-all duration-300 ${openSections[index] ? 'max-h-96' : 'max-h-0'}`}>
+        {/* Nội dung bài học */}
+        <ul className='list-disc md:pl-10 pl-4 pr-4 py-2 text-gray-600 border-t border-gray-300'>
+          {chapter.chapterContent.map((lecture, i) => {
+            const isPreviousLectureCompleted =
+              i === 0 || progressData?.lectureCompleted?.includes(chapter.chapterContent[i - 1].lectureId);
+            const isCurrentLectureCompleted = progressData?.lectureCompleted?.includes(lecture.lectureId);
+
+            return (
+              <li key={i} className='flex items-start gap-2 py-1'>
+                <img
+                  src={isCurrentLectureCompleted ? assets.blue_tick_icon : assets.play_icon}
+                  alt="playicon"
+                  className='w-4 h-4 mt-1'
+                />
+                <div className='flex items-center justify-between w-full text-gray-800 text-xs md:text-[15px]'>
+                  <p>{lecture.lectureTitle}</p>
+                  <div className='flex gap-2'>
+                    {lecture.lectureUrl && (
+                      <p
+                        onClick={() => {
+                          if (!isPreviousLectureCompleted) {
+                            toast.error('You need to complete the previous lesson to unlock this lesson..');
+                            return;
+                          }
+
+                          const selectedLecture = { ...lecture, chapter: index + 1, lecture: i + 1 };
+                          setPlayerData(selectedLecture);
+                          //reset trạng thái khi chuyển bài học
+                          setWatchTime(0);
+                          setIsEligibleToComplete(false);
+                          // Nếu bài học đã hoàn thành, set watchTime ngay lập tức
+                          if (isCurrentLectureCompleted) {
+                            setWatchTime(targetWatchTime);
+                            setIsEligibleToComplete(true);
+                          } else {
+                            setWatchTime(0); // Reset nếu chưa hoàn thành
+                            setIsEligibleToComplete(false);
+                          }
+                        }}
+                        className={`text-blue-500 cursor-pointer ${!isPreviousLectureCompleted ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        Watch
+                      </p>
+                    )}
+                    <p>{humanizeDuration(lecture.lectureDuration * 60 * 1000, { units: ['h', 'm'] })}</p>
                   </div>
-                  <p className='text-sm md:text-default'>{chapter.chapterContent.length} lectures - {calculateChapterTime(chapter)}</p>
                 </div>
-                <div className={`overflow-hidden transition-all duration-300 ${openSections[index] ? 'max-h-96' : 'max-h-0'}`}>
-                  <ul className='list-disc md:pl-10 pl-4 pr-4 py-2 text-gray-600 border-t border-gray-300'>
-                    {chapter.chapterContent.map((lecture, i) => (
-                      <li key={i} className='flex items-start gap-2 py-1'>
-                        <img src={progressData?.lectureCompleted?.includes(lecture.lectureId) ? assets.blue_tick_icon : assets.play_icon} alt="playicon" className='w-4 h-4 mt-1' />
-                        <div className='flex items-center justify-between w-full text-gray-800 text-xs md:text-[15px]'>
-                          <p>{lecture.lectureTitle}</p>
-                          <div className='flex gap-2'>
-                            {lecture.lectureUrl && (
-                              <p 
-                              onClick={() => {
-                                const selectedLecture = { ...lecture, chapter: index + 1, lecture: i + 1 };
-                                setPlayerData(selectedLecture);
-                            
-                                // Nếu bài học đã completed, set watchTime ngay lập tức
-                                if (progressData?.lectureCompleted?.includes(lecture.lectureId)) {
-                                  setWatchTime(targetWatchTime);
-                                  setIsEligibleToComplete(true);
-                                } else {
-                                  setWatchTime(0); // Reset nếu chưa hoàn thành
-                                  setIsEligibleToComplete(false);
-                                }
-                              }} 
-                              className='text-blue-500 cursor-pointer'
-                            >
-                              Watch
-                            </p>
-                            
-                            )}
-                            <p>{humanizeDuration(lecture.lectureDuration * 60 * 1000, { units: ['h', 'm'] })}</p>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ))}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>
+  );
+})}
           </div>
           <div className='flex items-center gap-2 py-3 mt-10'>
             <h1 className='text-xl font-bold'>Rate this Course:</h1>
@@ -226,7 +275,7 @@ useEffect(() => {
                 <p>{playerData?.chapter}.{playerData?.lecture} {playerData?.lectureTitle}</p>
               <button 
               onClick={() => markLectureAsCompleted(playerData.lectureId)}
-              className={`text-blue-600 ${!isEligibleToComplete ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`text-blue-600 ${!isEligibleToComplete ? 'opacity-50 cursor-not-allowed' : ''} cursor-pointer`}
               disabled={!isEligibleToComplete}
             >
               {progressData?.lectureCompleted?.includes(playerData.lectureId) ? 'Completed' : 'Mark Complete'}

@@ -30,7 +30,7 @@ const Footer = () => {
             </div>
 
             <p className='py-4 text-center text-xs md:test-sm text-white/60'>
-              Copyright  2025  &copy; GreatStack. All Right Reserved 
+              Copyright  2025  &copy; Edemy. All Right Reserved 
             </p>
         </footer>
     </div>

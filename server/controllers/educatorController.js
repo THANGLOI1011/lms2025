@@ -58,6 +58,23 @@ export const addCourse = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+// Update course
+export const updateCourse = async (req, res) => {
+    try {
+      const { id } = req.params; // Lấy ID khóa học từ URL
+      const updatedData = req.body; // Lấy dữ liệu cập nhật từ request body
+  
+      const course = await Course.findByIdAndUpdate(id, updatedData, { new: true }); // Cập nhật khóa học và trả về bản ghi mới
+  
+      if (!course) {
+        return res.status(404).json({ success: false, message: 'Course not found' });
+      }
+  
+      res.json({ success: true, message: 'Course updated successfully!', course });
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  };
 // Get Educator Courses
 
 export  const getEducatorCourses = async (req,res) => {
@@ -84,25 +101,25 @@ export const educatorDashboardData = async (req, res) => {
             status:'pending'
         })
 
-        const totalEarnings = purchases.reduce((sum, purchase) => {
+        const totalEarnings = purchases.reduce((sum, purchase) => { // Tính tổng số tiền lấy từ purchase sử dụng reduce để tính tổng
             return sum + (purchase.amount || 0); 
         }, 0);
 
         // collect unique
         const enrolledStudentsData =[];
-        for(const course of courses){
-            const students = await User.find({
-                _id:{$in:course.enrolledStudents}
+        for(const course of courses){ // Duyệt qua từng khóa học
+            const students = await User.find({ // Tìm kiếm học viên đã đăng ký khóa học
+                _id:{$in:course.enrolledStudents} // Lấy danh sách học viên đã đăng ký khóa học
             },'name imageUrl')
-            students.forEach(student => {
-                enrolledStudentsData.push({
-                    courseTitle:course.courseTitle,
-                    student
+            students.forEach(student => { // Duyệt qua từng học viên
+                enrolledStudentsData.push({ // Thêm thông tin học viên vào danh sách
+                    courseTitle:course.courseTitle, // Tên khóa học
+                    student // Thông tin học viên
                 })
             })
         }
         res.json({success:true,dashboardData:{
-            totalEarnings,enrolledStudentsData,totalCourses
+            totalEarnings,enrolledStudentsData,totalCourses //trả về tổng số tiền, danh sách học viên đã đăng ký và tổng số khóa học
         }})
     }catch(error){
         res.json({success:false,message:error.message})
@@ -110,7 +127,7 @@ export const educatorDashboardData = async (req, res) => {
 }
 
 // get enrolled students data with purchase data
-export const getEnrolledStudentsData = async (req, res) => {
+export const getEnrolledStudentsData = async (req, res) => { // danh sách student enrolled
     try {
       const courses = await Course.find({ educator: req.auth.userId }).populate('enrolledStudents', 'name imageUrl');
   
@@ -164,12 +181,9 @@ export const getEnrolledStudentsData = async (req, res) => {
 
         // 2. Lấy `userId` và `courseId` từ `Purchase`
         const { userId, courseId } = purchase;
-        console.log("User ID:", userId); // Debug: Kiểm tra giá trị userId
-        console.log("Course ID:", courseId); // Debug: Kiểm tra giá trị courseId
 
         // 3. Tìm `Course` dựa trên `courseId` và xóa `userId` khỏi `enrolledStudents`
         const courseProgress = await CourseProgress.findOneAndDelete({ userId, courseId });
-        console.log("CourseProgress:", courseProgress); // Debug: Kiểm tra giá trị CourseProgress
 
         if (!courseProgress) {
             console.log("No CourseProgress found for this user and course.");
@@ -221,7 +235,7 @@ export const getAllPurchases = async (req, res) => {
         // Lấy tất cả các purchase từ database
         const purchases = await Purchase.find();
 
-        if (!purchases || purchases.length === 0) {
+        if (!purchases || purchases.length === 0) { // nếu không có mặt định bằng 0
             return res.status(404).json({ success: false, message: "No purchases found" });
         }
         
@@ -266,7 +280,7 @@ export const deleteCourse = async (req, res) => {
         return res.status(404).json({ success: false, message: 'Course does not exist.' });
       }
   
-      // Xóa khóa học
+      // Xóa khóa học trong database
       await Course.findByIdAndDelete(courseId);
   
       res.json({ success: true, message: 'Course deleted successfully.' });

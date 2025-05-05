@@ -10,7 +10,7 @@ const AddCourse = () => {
   const quillRef = useRef(null)
   const editorRef = useRef(null)
   const  [courseTitle,setCourseTitle ] = useState('')
-  const [coursePrice, setCourePrice] = useState(0)
+  const [coursePrice, setCoursePrice] = useState(0)
   const [discount,setDiscount] = useState(0)
   const [image,setImage] = useState(null)
   const [chapters,setChapters] = useState([])
@@ -41,7 +41,7 @@ const AddCourse = () => {
         setChapters([...chapters,newChapter])
       }
     }else if(action === 'remove'){
-      setChapters(chapters.filter((chapter) => chapter.chapterId !== chapterId ))
+      setChapters(chapters.filter((chapter) => chapter.chapterId !== chapterId )) // xóa chapter
     }else if (action === 'toggle'){
       setChapters(chapters.map((chapter) =>
       chapter.chapterId === chapterId ? {...chapter,collapsed: !chapter.collapsed} : chapter
@@ -72,7 +72,7 @@ const AddCourse = () => {
         if(chapter.chapterId === currentChapterId){
           const newLecture = {
             ...lectureDetails,
-            lectureOrder:chapter.chapterContent.legth > 0 ? chapter.chapterContent.slice(-1)[0].lectureOrder + 1 : 1,
+            lectureOrder:chapter.chapterContent.length > 0 ? chapter.chapterContent.slice(-1)[0].lectureOrder + 1 : 1,
             lectureId:uniqid()
           }
           chapter.chapterContent.push(newLecture)
@@ -115,7 +115,7 @@ const AddCourse = () => {
       if (data.success) {
         toast.success(data.message);
         setCourseTitle('');
-        setCourePrice(0);
+        setCoursePrice(0);
         setDiscount(0);
         setImage(null);
         setChapters([]);
@@ -158,7 +158,7 @@ const AddCourse = () => {
         <div className='flex itmes-center justify-between flex-wrap'>
           <div className='flex flex-col gap-1'>
             <p>Course Price</p>
-            <input onChange={e => setCourePrice(e.target.value)} value={coursePrice} 
+            <input onChange={e => setCoursePrice(e.target.value)} value={coursePrice} 
             type="number" placeholder='0' className='outline-none md:py-2.5 py-2 w-28 px-3 rounded border border-gray-500 ' required />
           </div>
           <div className='flex md:flex-row flex-col items-center gap-3'>

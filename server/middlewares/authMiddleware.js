@@ -11,7 +11,8 @@ export const protecEducator = async (req, res, next) => {
         const response = await clerkClient.users.getUser(userId);
 
         // Kiểm tra publicMetadata có tồn tại không
-        if (!response.publicMetadata || response.publicMetadata.role !== 'educator') {
+        if (!response.publicMetadata || response.publicMetadata.role !== 'educator') { // Kiểm tra xem người dùng có phải là educator không
+            // Nếu không phải educator, trả về lỗi 403
             return res.status(403).json({ success: false, message: 'Access denied. Educator role required.' });
         }
 

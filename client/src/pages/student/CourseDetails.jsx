@@ -39,17 +39,6 @@ const CourseDetails = () => {
 
   const enrollCourse = async () => {
     try {
-      if (!userData) {
-        return toast.warn('Login to Enroll');
-      }
-  
-      if (userData.role === 'educator') {
-        return toast.error('Admin is not allowed to purchase courses.');
-      }
-  
-      if (isAlreadyEnrolled) {
-        return toast.warn('Already Enrolled');
-      }
   
       const token = await getToken();
       const { data } = await axios.post(
@@ -134,7 +123,7 @@ const CourseDetails = () => {
                                   <li key={i} className='flex items-start gap-2 py-1'>
                                       <img src={assets.play_icon} alt="playicon"  className='w-4 h-4 mt-1'/>
                                       <div className='flex items-center justify-between w-full  text-gray-800 text-xs md:text-[15px]'>
-                                        <p>{lecture.lectureTitle}</p>
+                                        <p className='w-[70%]'>{lecture.lectureTitle}</p>
                                         <div className='flex gap-2'>
                                           {lecture.isPreviewFree && <p onClick={() => setPlayerData({
                                             videoId: lecture.lectureUrl.split('/').pop()

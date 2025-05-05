@@ -50,7 +50,7 @@ const Navbar = () => {
       </div>
       {/* for phone screen */}
       <div className='md:hidden flex items-center gap-2 sm:gap-5 text-gray-500'>
-        <div className='flex items-center gap-1 sm:gap:2 max-sm:text-xs'>
+        <div className='flex items-center gap-1 sm:gap-2 max-sm:text-xs'>
         { user && <>
           
           <button className='cursor-pointer' onClick={becomeEducator}>{isEducator ? 'Educator Dashboard' : 'Become Educator'}</button>

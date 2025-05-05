@@ -9,7 +9,7 @@ const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const { current,getToken,isEducator,backendUrl } = useContext(AppContext);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async () => { //hàm bất đồng bộ để lấy dữ liệu từ API
     try{
       const token = await getToken()
       const { data } = await axios.get(backendUrl + '/api/educator/dashboard',{headers:{Authorization:`Bearer ${token}`}})
@@ -70,7 +70,7 @@ const Dashboard = () => {
               <tr>
                 <th className="px-4 py-3 font-semibold text-center hidden sm:table-cell">#</th>
                 <th className="px-4 py-3 font-semibold ">Student Name</th>
-                <th className="px-4 py-3 font-semibold ">Course Title</th>
+                <th className="px-4 py-3 font-semibold ">Course Title</th> 
               </tr>
             </thead>
             <tbody className="text-sm text-gray-500">

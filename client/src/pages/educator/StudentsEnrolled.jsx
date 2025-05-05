@@ -36,7 +36,7 @@ const handleDeleteStudent = async (purchaseId) => {
 
       if (data.success) {
           toast.success(data.message);
-          setEnrolledStudents((prev) => prev.filter((item) => item._id !== purchaseId));
+          setEnrolledStudents((prev) => prev.filter((item) => item._id !== purchaseId)); //giữ lại các phần tử khác trong mảng
       } else {
           toast.error(data.message);
       }
@@ -70,7 +70,7 @@ const handleDeleteStudent = async (purchaseId) => {
           </thead>
           <tbody className='text-sm text-gray-500'>
   {enrolledStudents.map((item, index) => (
-    <tr key={item._id} className='border-b border-gray-500/20'>
+    <tr key={item._id} className='border-b border-gray-500/20 '>
       <td className='px-4 py-3 text-center hidden sm:table-cell'>{index + 1}</td>
       <td className='md:px-4 px-2 py-3 flex items-center space-x-3'>
         <img src={item.student?.imageUrl || "https://via.placeholder.com/50"} alt="" className='w-9 h-9 rounded-full' />
