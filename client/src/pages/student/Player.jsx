@@ -22,7 +22,7 @@ const Player = () => {
   const [videoDuration, setVideoDuration] = useState(0);
   const [isEligibleToComplete, setIsEligibleToComplete] = useState(false);
   
-
+// Tìm khóa học người dùng đã ghi danh
   useEffect(() => {
     if (enrolledCourses.length > 0 && userData) {
       const foundCourse = enrolledCourses.find(course => String(course._id) === String(courseId));
